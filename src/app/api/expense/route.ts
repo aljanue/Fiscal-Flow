@@ -3,10 +3,11 @@ import { db } from '@/db';
 import { expenses, users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { encryptUserKey } from '@/lib/crypto';
+import { formatAmount } from '@/utils/format-data.utils';
 
 // DTO (Data Transfer Object): Contrato de lo que esperamos recibir del móvil
 interface CreateExpenseDTO {
-  amount: number;
+  amount: number | string;
   concept: string;
   categoryName: string;
   userKey: string; /// User API Key
@@ -32,9 +33,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    const amountFormatted = formatAmount(body.amount);
 
     await db.insert(expenses).values({
-      amount: body.amount.toString(),
+      amount: amountFormatted,
       concept: body.concept,
       categoryId: body.categoryName,
       userId: user.id,
