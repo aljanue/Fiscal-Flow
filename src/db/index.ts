@@ -1,6 +1,12 @@
+import * as dotenv from 'dotenv';
+import path from 'path';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema';
+
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+}
 
 const connectionString = process.env.DATABASE_URL!;
 

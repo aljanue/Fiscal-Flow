@@ -1,16 +1,16 @@
-import { pgTable, uuid, text, decimal, timestamp, boolean, integer } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, decimal, timestamp, boolean, integer, date } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 /**
  * TABLE: users
  * Purpose: Centralize identity.
- * Design: We include 'api_key' here to quickly validate mobile requests.
+ * Design: We include 'user_key' here to quickly validate mobile requests.
  */
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
   username: text('username').notNull().unique(), // E.g., "alex"
   email: text('email').unique(), // Optional, for future web login
-  apiKey: text('api_key').unique().notNull(), // THE KEY for shortcuts
+  userKey: text('user_key').unique().notNull(), // THE KEY for shortcuts
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -45,6 +45,7 @@ export const expenses = pgTable('expenses', {
   concept: text('concept').notNull(),
   amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
   date: timestamp('date').defaultNow().notNull(),
+  expenseDate: date('expenseDate', { mode: 'string' }).notNull(),
   
   // RELATIONS (Foreign Keys)
   userId: uuid('user_id').notNull().references(() => users.id),

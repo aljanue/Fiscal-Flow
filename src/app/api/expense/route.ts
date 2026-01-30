@@ -2,27 +2,30 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { expenses, users, categories } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { encryptUserKey } from '@/lib/crypto';
 
 // DTO (Data Transfer Object): Contrato de lo que esperamos recibir del móvil
 interface CreateExpenseDTO {
   amount: number;
   concept: string;
-  categoryName: string; // Category Name (e.g., "Food", "Transport")
-  apiKey: string;       // User Api Key
-  date?: string;        // Optional: If not provided, use current date
+  categoryName: string;
+  userKey: string; /// User API Key
+  expenseDate: string;
+  isRecurring?: boolean;
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body: CreateExpenseDTO = (await req.json()) as CreateExpenseDTO;
-    const apiKey = req.headers.get('x-api-key') || body.apiKey || '';
 
-    if (!body.amount || !body.concept || !body.categoryName) {
+    if (!body.amount || !body.concept || !body.categoryName || !body.userKey) {
       return NextResponse.json({ error: 'Missing input in body' }, { status: 400 });
     }
 
+    const encryptedUserKey = encryptUserKey(body.userKey);
+    
     const user = await db.query.users.findFirst({
-      where: eq(users.apiKey, apiKey),
+      where: eq(users.userKey, encryptedUserKey),
     });
 
     if (!user) {
@@ -42,7 +45,9 @@ export async function POST(req: NextRequest) {
       concept: body.concept,
       categoryId: category.id,
       userId: user.id,
-      date: body.date ? new Date(body.date) : new Date(),
+      date: body.expenseDate ? new Date(body.expenseDate) : new Date(),
+      expenseDate: body.expenseDate ? body.expenseDate : new Date().toISOString().split('T')[0],
+      isRecurring: body.isRecurring || false,
     });
 
     return NextResponse.json({ success: true, message: 'Expense saved' }, { status: 201 });
